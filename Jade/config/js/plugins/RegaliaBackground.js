@@ -9,6 +9,7 @@
   let previewGroups = [];
   let currentSearchQuery = "";
   let selectedSkinId = null;
+  let searchTimeout = null;
 
   class BGCM {
     constructor() {
@@ -118,7 +119,7 @@
         if (Array.isArray(skinsRaw)) {
           skinsArray = skinsRaw;
         } else if (typeof skinsRaw === 'object') {
-          skinsArray = Object.values(skinsRaw).flat();
+          skinsArray = this.extractSkinsFromObject(skinsRaw);
         }
 
         const uniqueSkins = new Map();
@@ -129,11 +130,123 @@
         });
         
         skinData = Array.from(uniqueSkins.values()).flatMap(skin => this.processSkinData(skin));
+        
+        await this.loadTFTData();
+        
         this.dataLoaded = true;
 
       } catch (error) {
         this.dataLoaded = true;
       }
+    }
+
+    extractSkinsFromObject(obj) {
+      const skins = [];
+      
+      const traverse = (current) => {
+        if (!current || typeof current !== 'object') return;
+        
+        if (current.id !== undefined && current.name !== undefined) {
+          skins.push(current);
+        }
+        
+        if (current.questSkinInfo && current.questSkinInfo.tiers) {
+          current.questSkinInfo.tiers.forEach(tier => {
+            if (tier && tier.id !== undefined && tier.name !== undefined) {
+              skins.push(tier);
+            }
+          });
+        }
+        
+        for (const key in current) {
+          if (current.hasOwnProperty(key)) {
+            const value = current[key];
+            
+            if (Array.isArray(value)) {
+              value.forEach(item => {
+                if (item && typeof item === 'object') {
+                  traverse(item);
+                }
+              });
+            } else if (typeof value === 'object' && value !== null) {
+              traverse(value);
+            }
+          }
+        }
+      };
+      
+      traverse(obj);
+      return skins;
+    }
+
+    async loadTFTData() {
+      try {
+        const tftEndpoints = [
+          "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/tftrotationalshopitemdata.json",
+          "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/tftrotationalshopitemdata.json"
+        ];
+
+        let tftResponse = null;
+        for (const endpoint of tftEndpoints) {
+          try {
+            tftResponse = await fetch(endpoint);
+            if (tftResponse.ok) break;
+          } catch (e) {
+            continue;
+          }
+        }
+
+        if (!tftResponse || !tftResponse.ok) {
+          return;
+        }
+
+        const tftRaw = await tftResponse.json();
+        const tftArray = Array.isArray(tftRaw) ? tftRaw : [];
+
+        const companionItems = tftArray
+          .filter(item => 
+            item && 
+            item.descriptionTraKey &&
+            item.descriptionTraKey.toLowerCase().startsWith("companion") &&
+            item.backgroundTextureLCU
+          )
+          .map(item => this.processTFTItem(item));
+
+        skinData.push(...companionItems);
+
+      } catch (error) {}
+    }
+
+    processTFTItem(item) {
+      const cleanPath = (path) => {
+        if (!path) return "";
+        return path
+          .replace(/^ASSETS\//i, "")
+          .toLowerCase();
+      };
+
+      const cleanBackgroundTexture = cleanPath(item.backgroundTextureLCU);
+      const cleanLargeIcon = cleanPath(item.standaloneLoadoutsLargeIcon);
+
+      return {
+        id: `tft-${item.id || Math.random()}`,
+        name: item.name || "TFT Companion",
+        tilePath: cleanLargeIcon
+          ? `https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/${cleanLargeIcon}`
+          : "",
+        splashPath: cleanBackgroundTexture
+          ? `https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/${cleanBackgroundTexture}`
+          : "",
+        uncenteredSplashPath: cleanBackgroundTexture
+          ? `https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/${cleanBackgroundTexture}`
+          : "",
+        splashVideoPath: "",
+        collectionSplashVideoPath: "",
+        isAnimated: false,
+        isTFT: true,
+        skinLineId: null,
+        skinLineName: null
+      };
     }
 
     processSkinData(skin) {
@@ -164,6 +277,7 @@
           ? `https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/${cleanPath(skin.collectionSplashVideoPath)}`
           : "",
         isAnimated: false,
+        isTFT: false,
       };
 
       const skins = [baseSkin];
@@ -185,6 +299,7 @@
             ? `https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/${cleanPath(videoPath)}`
             : "",
           isAnimated: true,
+          isTFT: false,
         });
       }
 
@@ -409,37 +524,58 @@
         return;
       }
 
-      const groupedByLetter = {};
+      const lolGroup = {
+        title: "LoL Skins",
+        items: []
+      };
+      
+      const tftGroup = {
+        title: "TFT Companions",
+        items: []
+      };
       
       skinData.forEach((skin) => {
         if (!skin || !skin.name) return;
         
-        const firstLetter = skin.name.charAt(0).toUpperCase();
-        if (!groupedByLetter[firstLetter]) {
-          groupedByLetter[firstLetter] = [];
+        if (skin.isTFT) {
+          tftGroup.items.push({
+            id: skin.id || Math.random(),
+            name: skin.name,
+            tilePath: skin.tilePath,
+            splashPath: skin.splashPath,
+            uncenteredSplashPath: skin.uncenteredSplashPath,
+            splashVideoPath: skin.splashVideoPath,
+            skinLineId: null,
+            skinLineName: null,
+            isAnimated: skin.isAnimated,
+            isTFT: true,
+          });
+        } else {
+          lolGroup.items.push({
+            id: skin.id || Math.random(),
+            name: skin.name,
+            tilePath: skin.tilePath,
+            splashPath: skin.splashPath,
+            uncenteredSplashPath: skin.uncenteredSplashPath,
+            splashVideoPath: skin.splashVideoPath,
+            skinLineId: null,
+            skinLineName: null,
+            isAnimated: skin.isAnimated,
+            isTFT: false,
+          });
         }
-        
-        groupedByLetter[firstLetter].push({
-          id: skin.id || Math.random(),
-          name: skin.name,
-          tilePath: skin.tilePath,
-          splashPath: skin.splashPath,
-          uncenteredSplashPath: skin.uncenteredSplashPath,
-          splashVideoPath: skin.splashVideoPath,
-          skinLineId: null,
-          skinLineName: null,
-          isAnimated: skin.isAnimated,
-        });
       });
 
-      const letterGroups = Object.keys(groupedByLetter)
-        .sort()
-        .map(letter => ({
-          title: letter,
-          items: groupedByLetter[letter].sort((a, b) => a.name.localeCompare(b.name))
-        }));
+      lolGroup.items.sort((a, b) => a.name.localeCompare(b.name));
+      tftGroup.items.sort((a, b) => a.name.localeCompare(b.name));
 
-      previewGroups.push(...letterGroups);
+      if (lolGroup.items.length > 0) {
+        previewGroups.push(lolGroup);
+      }
+      
+      if (tftGroup.items.length > 0) {
+        previewGroups.push(tftGroup);
+      }
 
       const customBackgrounds = window.DataStore?.get("customBackgrounds") || [];
       const customGroup = {
@@ -738,8 +874,14 @@
       this.loadSkinsIntoModal(list, modal, searchInput);
 
       searchInput.addEventListener('input', () => {
-        currentSearchQuery = searchInput.value.toLowerCase().trim();
-        this.loadSkinsIntoModal(list, modal, searchInput);
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+        
+        searchTimeout = setTimeout(() => {
+          currentSearchQuery = searchInput.value.toLowerCase().trim();
+          this.loadSkinsIntoModal(list, modal, searchInput);
+        }, 500);
       });
 
       modal.addEventListener('click', (e) => {
@@ -785,7 +927,8 @@
               validItems.push({
                 ...item,
                 element: null,
-                isSelected: item.id === selectedSkinId
+                isSelected: item.id === selectedSkinId,
+                groupTitle: group.title
               });
             }
           });
@@ -857,16 +1000,49 @@
             const animationBadge = document.createElement('div');
             animationBadge.textContent = 'ANIMATED';
             animationBadge.style.position = 'absolute';
+			animationBadge.style.fontFamily = 'var(--font-display)';
             animationBadge.style.top = '5px';
             animationBadge.style.left = '5px';
-            animationBadge.style.backgroundColor = 'rgba(90, 230, 197, 0.9)';
             animationBadge.style.color = '#010a13';
             animationBadge.style.padding = '2px 6px';
             animationBadge.style.borderRadius = '4px';
             animationBadge.style.fontSize = '10px';
             animationBadge.style.fontWeight = 'bold';
             animationBadge.style.zIndex = '2';
+			animationBadge.style.background = 'linear-gradient(45deg, #287861, #6ec8ad)';
             itemElement.appendChild(animationBadge);
+          }
+          
+          if (item.isTFT) {
+            const tftBadge = document.createElement('div');
+            tftBadge.textContent = 'TFT';
+            tftBadge.style.position = 'absolute';
+			tftBadge.style.fontFamily = 'var(--font-display)';
+            tftBadge.style.top = '5px';
+            tftBadge.style.right = '5px';
+            tftBadge.style.color = '#000';
+            tftBadge.style.padding = '2px 6px';
+            tftBadge.style.borderRadius = '4px';
+            tftBadge.style.fontSize = '10px';
+            tftBadge.style.fontWeight = 'bold';
+            tftBadge.style.zIndex = '2';
+			tftBadge.style.background = 'linear-gradient(45deg, #3f2878, #6e76c8)';
+            itemElement.appendChild(tftBadge);
+          } else {
+            const lolBadge = document.createElement('div');
+            lolBadge.textContent = 'LoL';
+            lolBadge.style.position = 'absolute';
+			lolBadge.style.fontFamily = 'var(--font-display)';
+            lolBadge.style.top = '5px';
+            lolBadge.style.right = '5px';
+            lolBadge.style.color = '#000';
+            lolBadge.style.padding = '2px 6px';
+            lolBadge.style.borderRadius = '4px';
+            lolBadge.style.fontSize = '10px';
+            lolBadge.style.fontWeight = 'bold';
+            lolBadge.style.zIndex = '2';
+			lolBadge.style.background = 'linear-gradient(45deg, #785a28, #c8aa6e)';
+            itemElement.appendChild(lolBadge);
           }
           
           const itemImg = item.element.cloneNode(true);
@@ -956,6 +1132,11 @@
       
       if (this.championSelectObserver) {
         this.championSelectObserver.disconnect();
+      }
+      
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+        searchTimeout = null;
       }
     }
   }

@@ -162,6 +162,7 @@
 		text-shadow: rgba(0,200,235,0.37) 0px 0px 76px;
   }
 }
+
 @keyframes soft-text-glow-red {
   from {
     text-shadow: rgba(255, 0, 0, 1) 0px 0px 32px;
@@ -170,6 +171,7 @@
     text-shadow: rgba(255, 0, 0, 1) 0px 0px 76px;
   }
 }
+
 @keyframes soft-text-glow-pale {
   from {
     text-shadow: rgba(245, 222, 179, 1) 0px 0px 17px;
@@ -178,6 +180,7 @@
     text-shadow: rgba(245, 222, 179, 0.37) 0px 0px 76px;
   }
 }
+
 @keyframes soft-text-glow-gold {
   from {
     text-shadow: rgba(255, 215, 0, 1) 0px 0px 17px;
@@ -186,6 +189,7 @@
     text-shadow: rgba(255, 215, 0, 0.37) 0px 0px 76px;
   }
 }
+
 .style-profile-skin-picker-button{
 	display: none;
 }
