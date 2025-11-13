@@ -363,7 +363,7 @@
       listContainer.style.flex = '1';
       listContainer.style.overflowY = 'auto';
       listContainer.style.overflowX = 'hidden';
-      listContainer.style.marginTop = '0px';
+      listContainer.style.marginTop = '-10px';
 	  listContainer.style.scrollbarWidth = 'none';
 	  listContainer.style.msOverflowStyle = 'none';
 	  listContainer.id = 'banner-list-content';
@@ -379,6 +379,7 @@
       const list = document.createElement('div');
       list.style.display = 'grid';
       list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+	  list.style.marginTop = '10px';
       list.style.gap = '15px';
       list.style.width = '100%';
       list.style.boxSizing = 'border-box';
@@ -514,10 +515,8 @@
           const bannerImg = banner.element.cloneNode(true);
           
           if (banner.assetPath === currentBannerPath) {
-            bannerImg.style.filter = 'grayscale(100%)';
-            bannerImg.style.transform = 'scale(1.05)';
-            item.style.border = '2px solid #28423a';
-			item.style.animation = 'smoothGlow 4s ease-in-out infinite alternate';
+			bannerImg.classList.add('selected-item-img');
+			item.classList.add('selected-item-border');
           }
           
           bannerImg.addEventListener('mouseenter', () => {

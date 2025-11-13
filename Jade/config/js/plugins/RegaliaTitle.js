@@ -163,7 +163,6 @@
 
     init() {
       this.startButtonObserver();
-      this.addStyles();
       this.startUniversalObserver();
       this.applySavedTitle();
       setInterval(() => {
@@ -251,49 +250,6 @@
       return button;
     }
 
-    addStyles() {
-      const style = document.createElement('style');
-      style.textContent = `
-        .search-input {
-          background-color: #21211F;
-          border: 2px solid #28423b;
-          border-radius: 8px;
-          color: #ffffff;
-          padding: 8px 12px;
-          font-family: 'Montserrat', sans-serif;
-          font-size: 12px;
-          transition: all 0.3s ease;
-          outline: none;
-          width: 200px;
-        }
-        .search-input:focus {
-          border-color: #3a6158;
-          box-shadow: 0 0 10px rgba(84, 58, 96, 0.3);
-        }
-        .search-input::placeholder {
-          color: #888888;
-        }
-        .regalia-title-scrollable::-webkit-scrollbar {
-          width: 8px;
-        }
-        .regalia-title-scrollable::-webkit-scrollbar-track {
-          background: transparent;
-          border-radius: 10px;
-          margin: 5px;
-        }
-        .regalia-title-scrollable::-webkit-scrollbar-thumb {
-          background: #28423b;
-          border-radius: 10px;
-          border: 2px solid transparent;
-        }
-        .selected-title {
-          border: 2px solid #28423b !important;
-          background: rgba(40, 66, 60, 0.3) !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
     async showTitleModal() {
       document.getElementById(CONFIG.MODAL_ID)?.remove();
 
@@ -371,7 +327,7 @@
 
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
-      searchInput.placeholder = 'Search titles...';
+      searchInput.placeholder = 'Search...';
       searchInput.className = 'search-input';
       searchInput.addEventListener('input', (e) => {
         this.filterTitles(e.target.value);
@@ -425,13 +381,14 @@
       listContainer.style.flex = '1';
       listContainer.style.overflowY = 'auto';
       listContainer.style.overflowX = 'hidden';
-      listContainer.style.marginTop = '50px';
-      listContainer.style.paddingRight = '15px';
-      listContainer.className = 'regalia-title-scrollable';
+      listContainer.style.marginTop = '30px';
+      listContainer.style.paddingRight = '10px';
+      listContainer.className = 'jade-scrollable';
       
       const list = document.createElement('div');
       list.style.display = 'grid';
       list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+	  list.style.marginTop = '10px';
       list.style.gap = '10px';
       list.style.width = '100%';
       list.style.boxSizing = 'border-box';
@@ -542,7 +499,6 @@
         item.style.transition = 'all 0.3s ease';
         
         const isCurrentTitle = currentTitle && currentTitle.itemId === title.itemId;
-        if (isCurrentTitle) item.classList.add('selected-title');
         
         const titleText = document.createElement('span');
         titleText.textContent = title.titleName;
@@ -555,20 +511,33 @@
         titleText.style.lineHeight = '1.2';
         item.appendChild(titleText);
         
-        item.addEventListener('mouseenter', () => {
+        titleText.addEventListener('mouseenter', () => {
           if (!isCurrentTitle) {
-            item.style.borderColor = '#3a6158';
-            item.style.transform = 'scale(1.02)';
+            titleText.style.animation = 'scaleUp 1s ease forwards';
+          }
+        });
+		item.addEventListener('mouseenter', () => {
+          if (!isCurrentTitle) {
+            item.style.animation = 'BorderColorUp 1s ease forwards';
           }
         });
         
-        item.addEventListener('mouseleave', () => {
+        titleText.addEventListener('mouseleave', () => {
           if (!isCurrentTitle) {
-            item.style.borderColor = 'transparent';
-            item.style.transform = 'scale(1)';
+            titleText.style.animation = 'scaleDown 0.5s ease forwards';
+          }
+        });
+		item.addEventListener('mouseleave', () => {
+          if (!isCurrentTitle) {
+            item.style.animation = 'BorderColorDown 0.5s ease forwards';
           }
         });
         
+		if (isCurrentTitle) {
+			titleText.classList.add('selected-title');
+			item.classList.add('selected-item-border');
+		}
+		
         item.addEventListener('click', async () => {
           await this.setCurrentTitle(title);
           this.applyTitle(title.titleName);

@@ -20,6 +20,8 @@
       this.blurObserver = null;
       this.isChampionSelectActive = false;
       this.championSelectObserver = null;
+      this.cacheKey = 'bgcm-skins-cache';
+      this.cacheTimeout = 24 * 60 * 60 * 1000;
       this.init();
     }
 
@@ -92,6 +94,13 @@
     }
 
     async loadData() {
+      const cached = this.getCachedSkins();
+      if (cached) {
+        skinData = cached;
+        this.dataLoaded = true;
+        return;
+      }
+
       try {
         const endpoints = [
           "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/skins.json",
@@ -119,7 +128,7 @@
         if (Array.isArray(skinsRaw)) {
           skinsArray = skinsRaw;
         } else if (typeof skinsRaw === 'object') {
-          skinsArray = this.extractSkinsFromObject(skinsRaw);
+          skinsArray = this.extractSkinsOptimized(skinsRaw);
         }
 
         const uniqueSkins = new Map();
@@ -133,6 +142,7 @@
         
         await this.loadTFTData();
         
+        this.cacheSkins(skinData);
         this.dataLoaded = true;
 
       } catch (error) {
@@ -140,42 +150,52 @@
       }
     }
 
-    extractSkinsFromObject(obj) {
+    getCachedSkins() {
+      if (!window.DataStore) return null;
+      
+      const cached = window.DataStore.get(this.cacheKey);
+      if (!cached) return null;
+      
+      const { data, timestamp } = cached;
+      if (Date.now() - timestamp > this.cacheTimeout) {
+        return null;
+      }
+      
+      return data;
+    }
+
+    cacheSkins(skins) {
+      if (window.DataStore) {
+        window.DataStore.set(this.cacheKey, {
+          data: skins,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    extractSkinsOptimized(obj) {
       const skins = [];
       
-      const traverse = (current) => {
-        if (!current || typeof current !== 'object') return;
-        
-        if (current.id !== undefined && current.name !== undefined) {
-          skins.push(current);
-        }
-        
-        if (current.questSkinInfo && current.questSkinInfo.tiers) {
-          current.questSkinInfo.tiers.forEach(tier => {
-            if (tier && tier.id !== undefined && tier.name !== undefined) {
-              skins.push(tier);
-            }
-          });
-        }
-        
-        for (const key in current) {
-          if (current.hasOwnProperty(key)) {
-            const value = current[key];
+      if (typeof obj === 'object') {
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            const item = obj[key];
             
-            if (Array.isArray(value)) {
-              value.forEach(item => {
-                if (item && typeof item === 'object') {
-                  traverse(item);
-                }
-              });
-            } else if (typeof value === 'object' && value !== null) {
-              traverse(value);
+            if (item && typeof item === 'object' && item.id !== undefined && item.name !== undefined) {
+              skins.push(item);
+              
+              if (item.questSkinInfo?.tiers) {
+                item.questSkinInfo.tiers.forEach(tier => {
+                  if (tier?.id !== undefined && tier.name !== undefined) {
+                    skins.push(tier);
+                  }
+                });
+              }
             }
           }
         }
-      };
+      }
       
-      traverse(obj);
       return skins;
     }
 
@@ -769,23 +789,18 @@
       content.appendChild(reminder);
 
       const searchContainer = document.createElement('div');
-      searchContainer.style.display = 'flex';
-      searchContainer.style.gap = '15px';
-      searchContainer.style.padding = '10px 20px';
-      searchContainer.style.alignItems = 'center';
+      searchContainer.style.position = 'absolute';
+      searchContainer.style.top = '15px';
+      searchContainer.style.left = '15px';
+      searchContainer.style.zIndex = '10001';
 
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
-      searchInput.placeholder = 'Search skins...';
-      searchInput.style.flex = '1';
-      searchInput.style.padding = '8px 12px';
-      searchInput.style.backgroundColor = '#1e2328';
-      searchInput.style.border = '1px solid #1d4f44';
-      searchInput.style.borderRadius = '4px';
-      searchInput.style.color = '#728581';
-      searchInput.style.fontFamily = 'Montserrat, sans-serif';
-      searchInput.style.fontSize = '14px';
-      searchInput.style.opacity = '1';
+      searchInput.placeholder = 'Search...';
+      searchInput.className = 'search-input';
+      searchInput.addEventListener('input', (e) => {
+        this.filterTitles(e.target.value);
+      });
 
       searchContainer.appendChild(searchInput);
       content.appendChild(searchContainer);
@@ -825,41 +840,13 @@
       listContainer.style.overflowY = 'auto';
       listContainer.style.overflowX = 'hidden';
       listContainer.style.marginTop = '0px';
-      listContainer.style.paddingRight = '15px';
-      
-      const scrollbarStyle = document.createElement('style');
-      scrollbarStyle.textContent = `
-        .bgcm-scrollable::-webkit-scrollbar {
-          width: 8px;
-        }
-        .bgcm-scrollable::-webkit-scrollbar-track {
-          background: transparent;
-          border-radius: 10px;
-          margin: 5px;
-        }
-        .bgcm-scrollable::-webkit-scrollbar-thumb {
-          background: #28423d;
-          border-radius: 10px;
-          border: 2px solid transparent;
-        }
-        
-        .skin-item.selected {
-          border: 2px solid #4b7d6f !important;
-          box-shadow: 0 0 10px rgba(68, 194, 164, 0.5) !important;
-          animation: smoothGlow 2s ease-in-out infinite alternate !important;
-        }
-        
-        .skin-item.selected img {
-          filter: grayscale(100%) !important;
-          transform: scale(1.05) !important;
-        }
-      `;
-      document.head.appendChild(scrollbarStyle);
+      listContainer.style.paddingRight = '10px';
           
       const list = document.createElement('div');
       list.style.display = 'grid';
-      list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
-      list.style.gap = '15px';
+      list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+	  list.style.marginTop = '10px';
+      list.style.gap = '10px';
       list.style.width = '100%';
       list.style.boxSizing = 'border-box';
 
@@ -869,7 +856,7 @@
       modal.appendChild(content);
       document.body.appendChild(modal);
 
-      listContainer.className = 'bgcm-scrollable';
+      listContainer.className = 'jade-scrollable';
 
       this.loadSkinsIntoModal(list, modal, searchInput);
 
@@ -921,7 +908,7 @@
             );
           }
 
-          groupItems.forEach(item => {
+          groupItems.slice(0, 200).forEach(item => {
             if (item && item.tilePath && !processedIds.has(item.id)) {
               processedIds.add(item.id);
               validItems.push({
@@ -979,14 +966,11 @@
 
           const itemElement = document.createElement('div');
           itemElement.className = 'skin-item';
-          if (item.isSelected) {
-            itemElement.classList.add('selected');
-          }
           itemElement.style.padding = '10px';
           itemElement.style.backgroundColor = '#21211F';
           itemElement.style.borderRadius = '8px';
           itemElement.style.cursor = 'pointer';
-          itemElement.style.border = item.isSelected ? '2px solid #4b7d6f' : '2px solid transparent';
+          itemElement.style.border = '2px solid transparent';
           itemElement.style.display = 'flex';
           itemElement.style.flexDirection = 'column';
           itemElement.style.alignItems = 'center';
@@ -1046,51 +1030,49 @@
           }
           
           const itemImg = item.element.cloneNode(true);
+          
           if (item.isSelected) {
-            itemImg.style.filter = 'grayscale(100%)';
-            itemImg.style.transform = 'scale(1.05)';
+            itemImg.classList.add('selected-item-img');
+            itemElement.classList.add('selected-item-border');
           }
           
           itemImg.addEventListener('mouseenter', () => {
-			  if (!itemElement.classList.contains('selected')) {
+			  if (!itemElement.classList.contains('selected-item-border')) {
 				itemImg.style.animation = 'scaleUp 1s ease forwards';
 			  }
 			});
 
 			itemImg.addEventListener('mouseleave', () => {
-			  if (!itemElement.classList.contains('selected')) {
+			  if (!itemElement.classList.contains('selected-item-border')) {
 				itemImg.style.animation = 'scaleDown 0.5s ease forwards';
 			  }
 			});
 
 			itemElement.addEventListener('mouseenter', () => {
-			  if (!itemElement.classList.contains('selected')) {
+			  if (!itemElement.classList.contains('selected-item-border')) {
 				itemElement.style.animation = 'BorderColorUp 1s ease forwards';
 			  }
 			});
 
 			itemElement.addEventListener('mouseleave', () => {
-			  if (!itemElement.classList.contains('selected')) {
+			  if (!itemElement.classList.contains('selected-item-border')) {
 				itemElement.style.animation = 'BorderColorDown 0.5s ease forwards';
 			  }
 			});
           
           itemElement.addEventListener('click', async () => {
             document.querySelectorAll('.skin-item').forEach(el => {
-              el.classList.remove('selected');
+              el.classList.remove('selected-item-border');
               el.style.borderColor = 'transparent';
               el.style.animation = '';
               const img = el.querySelector('img');
               if (img) {
-                img.style.filter = '';
-                img.style.transform = '';
+                img.classList.remove('selected-item-img');
               }
             });
             
-            itemElement.classList.add('selected');
-            itemElement.style.borderColor = '#4b7d6f';
-            itemImg.style.filter = 'grayscale(100%)';
-            itemImg.style.transform = 'scale(1.05)';
+            itemImg.classList.add('selected-item-img');
+            itemElement.classList.add('selected-item-border');
             
             const backgroundUrl = item.isAnimated ? 
               (item.splashVideoPath || item.splashPath) : 

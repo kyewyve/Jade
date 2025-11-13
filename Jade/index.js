@@ -5,7 +5,7 @@
 
 window.Effect.apply('unified', { color: "#000000DA" });
 
-import "./config/css/theme.css";
+import "./config/css/plug-th.css";
 import * as observer from './config/js/main/obs.js'
 import * as shadow_dom from './config/js/main/shdw.js'
 import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Settings-Utils.js";

@@ -522,12 +522,13 @@
       listContainer.style.flex = '1';
       listContainer.style.overflowY = 'auto';
       listContainer.style.overflowX = 'hidden';
-      listContainer.style.marginTop = '0px';
-      listContainer.style.paddingRight = '15px';
+      listContainer.style.marginTop = '-15px';
+      listContainer.style.paddingRight = '10px';
             
       const list = document.createElement('div');
       list.style.display = 'grid';
       list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+	  list.style.marginTop = '10px';
       list.style.gap = '15px';
       list.style.width = '100%';
       list.style.boxSizing = 'border-box';
@@ -599,10 +600,6 @@
             const isCurrentBorder = currentBorder && 
               currentBorder.uniqueId === border.uniqueId;
             
-            if (isCurrentBorder) {
-              item.style.border = '2px solid #980841';
-            }
-            
             const borderImg = new Image();
             borderImg.onload = () => {
               borderImg.style.width = '100%';
@@ -612,10 +609,8 @@
               borderImg.style.boxSizing = 'border-box';
               
               if (isCurrentBorder) {
-                borderImg.style.filter = 'grayscale(100%)';
-                borderImg.style.transform = 'scale(1.05)';
-				item.style.border = '2px solid #28423c';
-				item.style.animation = 'smoothGlow 4s ease-in-out infinite alternate';
+				borderImg.classList.add('selected-item-img');
+				item.classList.add('selected-item-border');
               }
               
               borderImg.addEventListener('mouseenter', () => {

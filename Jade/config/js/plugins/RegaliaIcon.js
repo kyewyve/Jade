@@ -3,8 +3,13 @@
     STYLE_ID: "regalia.icon-style",
     MODAL_ID: "regalia.icon-modal",
     DATASTORE_KEY: "regalia.icon-datastore",
-    API_URL: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons.json",
+    API_URL: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/summoner-icons.json",
+    CACHE_KEY: "regalia.icons-cache",
+    CACHE_TIMEOUT: 24 * 60 * 60 * 1000
   };
+
+  let currentIconSearchQuery = "";
+  let iconSearchTimeout = null;
 
   function StopTimeProp(object, properties) {
     if (!object) return;
@@ -155,6 +160,7 @@
       this.iconInterval = null;
       this.iconTimeouts = [];
       this.currentIconId = null;
+      this.iconsData = null;
       this.init();
     }
 
@@ -170,6 +176,49 @@
         this.applyCustomIcon();
         this.IconContainerObserver();
       } catch (error) {}
+    }
+
+    getCachedIcons() {
+      if (!window.DataStore) return null;
+      
+      const cached = window.DataStore.get(CONFIG.CACHE_KEY);
+      if (!cached) return null;
+      
+      const { data, timestamp } = cached;
+      if (Date.now() - timestamp > CONFIG.CACHE_TIMEOUT) {
+        return null;
+      }
+      
+      return data;
+    }
+
+    cacheIcons(icons) {
+      if (window.DataStore) {
+        window.DataStore.set(CONFIG.CACHE_KEY, {
+          data: icons,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    async loadIconsData() {
+      const cached = this.getCachedIcons();
+      if (cached) {
+        this.iconsData = cached;
+        return;
+      }
+
+      try {
+        const response = await fetch(CONFIG.API_URL);
+        const icons = await response.json();
+        
+        const validIcons = icons.filter((icon) => icon.id !== -1);
+        this.iconsData = validIcons;
+        
+        this.cacheIcons(validIcons);
+      } catch (error) {
+        this.iconsData = [];
+      }
     }
 	
 	IconContainerObserver() {
@@ -493,6 +542,23 @@
 	  reminder.className = 'soft-text-glow';
 
 	  content.appendChild(reminder);
+
+      const searchContainer = document.createElement('div');
+      searchContainer.style.position = 'absolute';
+      searchContainer.style.top = '15px';
+      searchContainer.style.left = '15px';
+      searchContainer.style.zIndex = '10001';
+
+      const searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.placeholder = 'Search...';
+      searchInput.className = 'search-input';
+      searchInput.addEventListener('input', (e) => {
+        this.filterTitles(e.target.value);
+      });
+
+      searchContainer.appendChild(searchInput);
+      content.appendChild(searchContainer);
 	  
 	  const closeBtn = document.createElement('button');
 	  closeBtn.style.position = 'absolute';
@@ -516,40 +582,27 @@
 		closeBtn.style.animation = 'ColorDown 0.25s forwards';
 	  });
 	  
-	  closeBtn.addEventListener('click', () => {
+	  const closeModal = () => {
+        searchInput.value = '';
+        currentIconSearchQuery = '';
 		document.body.removeChild(modal);
-	  });
+	  };
+	  
+	  closeBtn.addEventListener('click', closeModal);
 	  
 	  const listContainer = document.createElement('div');
 	  listContainer.style.flex = '1';
 	  listContainer.style.overflowY = 'auto';
 	  listContainer.style.overflowX = 'hidden';
 	  listContainer.style.marginTop = '0px';
-	  listContainer.style.paddingRight = '15px';
-	  
-	  const scrollbarStyle = document.createElement('style');
-	  scrollbarStyle.textContent = `
-		 .regalia-icon-scrollable::-webkit-scrollbar {
-          width: 8px;
-        }
-        .regalia-icon-scrollable::-webkit-scrollbar-track {
-          background: transparent;
-          border-radius: 10px;
-          margin: 5px;
-        }
-        .regalia-icon-scrollable::-webkit-scrollbar-thumb {
-          background: #28423d;
-          border-radius: 10px;
-          border: 2px solid transparent;
-        }
-	  `;
-	  document.head.appendChild(scrollbarStyle);
+	  listContainer.style.paddingRight = '10px';
 			
 	  const list = document.createElement('div');
 	  list.style.display = 'grid';
 	  list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
 	  list.style.gap = '15px';
 	  list.style.width = '100%';
+	  list.style.marginTop = '10px';
 	  list.style.boxSizing = 'border-box';
 
 	  listContainer.appendChild(list);
@@ -558,19 +611,30 @@
 	  modal.appendChild(content);
 	  document.body.appendChild(modal);
 
-	  listContainer.className = 'regalia-icon-scrollable';
+	  listContainer.className = 'jade-scrollable';
 
-	  this.loadIconsIntoModal(list, modal);
+	  this.loadIconsIntoModal(list, modal, searchInput);
+
+      searchInput.addEventListener('input', () => {
+        if (iconSearchTimeout) {
+          clearTimeout(iconSearchTimeout);
+        }
+        
+        iconSearchTimeout = setTimeout(() => {
+          currentIconSearchQuery = searchInput.value.toLowerCase().trim();
+          this.loadIconsIntoModal(list, modal, searchInput);
+        }, 500);
+      });
 
 	  modal.addEventListener('click', (e) => {
 		if (e.target === modal) {
-		  document.body.removeChild(modal);
+		  closeModal();
 		}
 	  });
 	  
 	  const handleEscape = (e) => {
 		if (e.key === 'Escape') {
-		  document.body.removeChild(modal);
+		  closeModal();
 		  document.removeEventListener('keydown', handleEscape);
 		}
 	  };
@@ -581,21 +645,28 @@
 	  });
 	}
 
-    async loadIconsIntoModal(list, modal) {
+    async loadIconsIntoModal(list, modal, searchInput) {
 	  try {
-		const response = await fetch(CONFIG.API_URL);
-		const icons = await response.json();
+        if (!this.iconsData) {
+          await this.loadIconsData();
+        }
 		
 		list.innerHTML = '';
 
 		const validIcons = [];
 		const currentIconId = await window.DataStore.get(CONFIG.DATASTORE_KEY);
 		
-		const sortedIcons = icons
-		  .filter((icon) => icon.id !== -1)
-		  .sort((a, b) => b.id - a.id);
+		let filteredIcons = this.iconsData;
+        
+        if (currentIconSearchQuery) {
+          filteredIcons = filteredIcons.filter(icon => 
+            icon && icon.title && icon.title.toLowerCase().includes(currentIconSearchQuery)
+          );
+        }
+
+        const sortedIcons = filteredIcons.sort((a, b) => b.id - a.id);
 		
-		const iconPromises = sortedIcons.map((icon) => {
+		const iconPromises = sortedIcons.slice(0, 200).map((icon) => {
 		  return new Promise((resolve) => {
 			const img = new Image();
 			img.onload = () => {
@@ -619,7 +690,16 @@
 
 		await Promise.all(iconPromises);
 
-		validIcons.sort((a, b) => b.id - a.id);
+		if (validIcons.length === 0) {
+		  list.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+              <p style="color: #728581; font-size: 16px; margin: 0;">
+                ${this.iconsData ? 'No icons found matching your search.' : 'Loading icons...'}
+              </p>
+            </div>
+          `;
+		  return;
+		}
 
 		validIcons.forEach(icon => {
 		  const item = document.createElement('div');
@@ -638,10 +718,8 @@
 		  const iconImg = icon.element.cloneNode(true);
 		  
 		  if (icon.id === currentIconId) {
-			iconImg.style.filter = 'grayscale(100%)';
-			iconImg.style.transform = 'scale(1.05)';
-			item.style.border = '2px solid #28423d';
-			item.style.animation = 'smoothGlow 4s ease-in-out infinite alternate';
+			iconImg.classList.add('selected-item-img');
+			item.classList.add('selected-item-border');
 		  }
 		  
 		  iconImg.addEventListener('mouseenter', () => {
@@ -671,6 +749,7 @@
 		  item.addEventListener('click', async () => {
 			await window.DataStore.set(CONFIG.DATASTORE_KEY, icon.id);
 			await this.applyCustomIcon();
+			currentIconSearchQuery = '';
 			document.body.removeChild(modal);
 		  });
 		  
@@ -678,9 +757,6 @@
 		  list.appendChild(item);
 		});
 
-		if (validIcons.length === 0) {
-		  list.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px;"><p style="color: #e63946; font-size: 16px; margin: 0;">No valid icons found. Please try again later.</p></div>';
-		}
 	  } catch (error) {
 		list.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px;"><p style="color: #e63946; font-size: 16px; margin: 0;">Failed to load icons. Please try again later.</p></div>';
 	  }
