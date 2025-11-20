@@ -1,5 +1,5 @@
 # Jade
-A comprehensive plug-in for the League of Legends client running through the Pengu Loader
+A comprehensive plug-in for the League of Legends client running through the [Pengu Loader](https://github.com/PenguLoader/PenguLoader/releases/).
 ---
 Jade allows you to customize the League of Legends client at your discretion.
 
