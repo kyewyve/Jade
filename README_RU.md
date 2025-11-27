@@ -69,33 +69,33 @@ JADE позволяет вам кастомизировать клиент Leagu
 
 
 <h2> ПРЕДПРОСМОТР </h2>
-Icon
+Иконки
 **
 <img width="1523" height="906" alt="image" src="https://github.com/user-attachments/assets/fbcd38a8-0242-4ff1-9126-ec480d6c855f" />
 **
 
-Borders
+Рамки
 **
 <img width="1533" height="894" alt="image" src="https://github.com/user-attachments/assets/19d3caa9-39dd-431e-9260-9338b4aac0bf" />
 <img width="1525" height="896" alt="image" src="https://github.com/user-attachments/assets/2dd53c52-a0c9-492f-96af-eff724f59bcc" />
 **
 
-Titles
+Титулы
 **
 <img width="1529" height="895" alt="image" src="https://github.com/user-attachments/assets/f41475e2-1ef8-4299-bbba-ff7f183a47b4" />
 **
 
-Banners
+Баннеры
 **
 <img width="1529" height="901" alt="image" src="https://github.com/user-attachments/assets/8cd1a475-e35a-465f-ab0d-dac7b5089e57" />
 **
 
-Backgrounds
+Фоны
 **
 <img width="1526" height="876" alt="image" src="https://github.com/user-attachments/assets/0e3cc3ec-a893-473c-a6e1-0771e58c79b9" />
 **
 
-> All changes take place locally. This means that other players WILL NOT SEE what you have chosen. ONLY YOU.
+> Все изменения происходят локально. Это означает, что другие игроки НЕ УВИДЯТ то, что вы выбрали. ТОЛЬКО ВЫ.
 
 Аддоны:
 <h1> 1. Автопринятие игры </h1>
