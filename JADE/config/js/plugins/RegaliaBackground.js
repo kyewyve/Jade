@@ -462,28 +462,31 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
 			const style = document.createElement('style');
 			style.id = 'bgcm-custom-style';
 			style.textContent = `
-				/* Скрываем стандартные фоны везде кроме champion select */
 				lol-uikit-background-switcher-image:not(.champion-select-main-container lol-uikit-background-switcher-image),
 				.lol-uikit-background-switcher-image:not(.champion-select-main-container .lol-uikit-background-switcher-image),
 				[class*="background-switcher"]:not(.champion-select-main-container [class*="background-switcher"]),
 				[src*="parties-background"]:not(.champion-select-main-container [src*="parties-background"]),
-				[src*="background"]:not(.champion-select-main-container [src*="background"]) {
-					display: none !important;
-					visibility: hidden !important;
+				[src*="background"]:not(.champion-select-main-container [src*="background"]) 
+				{
+					display: none;
+					visibility: hidden;
 				}
 
-				#bgcm-custom-image {
+				#bgcm-custom-image 
+				{
 					display: block !important;
 					visibility: visible !important;
 				}
 
-				#bgcm-custom-video {
+				#bgcm-custom-video 
+				{
 					display: none !important;
 				}
 
-				/* Гарантируем что видео в champion select работают */
 				.champion-select-main-container uikit-video,
-				.champion-select-main-container video {
+				.champion-select-main-container video,
+				.quick-play-skin-select-component [class*="background-switcher"]
+				{
 					display: block !important;
 					visibility: visible !important;
 				}
@@ -538,24 +541,26 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
 			const style = document.createElement('style');
 			style.id = 'bgcm-custom-style';
 			style.textContent = `
-				/* Скрываем стандартные фоны везде кроме champion select */
 				lol-uikit-background-switcher-image:not(.champion-select-main-container lol-uikit-background-switcher-image),
 				.lol-uikit-background-switcher-image:not(.champion-select-main-container .lol-uikit-background-switcher-image),
 				[class*="background-switcher"]:not(.champion-select-main-container [class*="background-switcher"]),
 				[src*="parties-background"]:not(.champion-select-main-container [src*="parties-background"]),
-				[src*="background"]:not(.champion-select-main-container [src*="background"]) {
-					display: none !important;
-					visibility: hidden !important;
+				[src*="background"]:not(.champion-select-main-container [src*="background"]) 
+				{
+					display: none;
+					visibility: hidden;
 				}
 
-				#bgcm-custom-video {
+				#bgcm-custom-video 
+				{
 					display: block !important;
 					visibility: visible !important;
 				}
 
-				/* Гарантируем что видео в champion select работают */
 				.champion-select-main-container uikit-video,
-				.champion-select-main-container video {
+				.champion-select-main-container video,
+				.quick-play-skin-select-component [class*="background-switcher"]
+				{
 					display: block !important;
 					visibility: visible !important;
 				}
@@ -976,7 +981,7 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
             if (!this.dataLoaded) {
                 list.innerHTML = `
                     <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <p style="color: #728581; font-size: 16px; margin: 0;">Loading skins...</p>
+                    <p style="color: #728581; font-size: 16px; margin: 0;"> </p>
                     </div>
                 `;
                 
@@ -1246,7 +1251,7 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
                     list.innerHTML = `
                     <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                     <p style="color: #728581; font-size: 16px; margin: 0;">
-                        ${this.dataLoaded ? 'No skins found matching your search.' : 'Loading skins...'}
+                        ${this.dataLoaded ? ' ' : ' '}
                     </p>
                     </div>
                 `;
@@ -1390,7 +1395,7 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
             } catch (error) {
                 list.innerHTML = `
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <p style="color: #e63946; font-size: 16px; margin: 0;">Failed to load skins.</p>
+                    <p style="color: #e63946; font-size: 16px; margin: 0;"> </p>
                 </div>
                 `;
             }
