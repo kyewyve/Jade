@@ -590,11 +590,11 @@
 	  paginationContainer.style.padding = '8px';
 	  
 	  const prevButton = document.createElement('button');
-	  prevButton.innerHTML = '&lt;';
+	  prevButton.innerHTML = '<';
 	  prevButton.className = 'pagination-button';
 	  
 	  const nextButton = document.createElement('button');
-	  nextButton.innerHTML = '&gt;';
+	  nextButton.innerHTML = '>';
 	  nextButton.className = 'pagination-button';
 	  
 	  const pageInfo = document.createElement('span');

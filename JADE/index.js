@@ -1,3 +1,8 @@
+/**
+ * @author kye
+ * @link https://github.com/kyewyve/Jade
+**/
+
 window.Effect.apply('unified', { color: "#000000DA" });
 
 import "./config/css/plug-th.css";
@@ -18,7 +23,7 @@ const initializeObserver = async () => {
 class VersionTextReplacer {
     constructor() {
         this.targetVersion = "25.23";
-        this.replacementText = "JADE";
+        this.replacementText = "JADE v1.3";
         this.observer = null;
         this.init();
     }

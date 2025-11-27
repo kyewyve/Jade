@@ -161,19 +161,23 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
         }
 
         disablePlugin() {
-            this.removeCustomBackground();
-            
-            if (this.customButton && document.body.contains(this.customButton)) {
-                this.customButton.remove();
-                this.customButton = null;
-                this.buttonCreated = false;
-            }
-            
-            const modal = document.getElementById(CONFIG.MODAL_ID);
-            if (modal) {
-                modal.remove();
-            }
-        }
+			this.removeCustomBackground();
+			const style = document.getElementById('bgcm-custom-style');
+			if (style) {
+				style.remove();
+			}
+			
+			if (this.customButton && document.body.contains(this.customButton)) {
+				this.customButton.remove();
+				this.customButton = null;
+				this.buttonCreated = false;
+			}
+			
+			const modal = document.getElementById(CONFIG.MODAL_ID);
+			if (modal) {
+				modal.remove();
+			}
+		}
 
         enablePlugin() {
             this.applyCustomBackground();
@@ -422,146 +426,162 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
         }
 
         createImageElementBackground(url) {
-            this.cleanupInlineStyles();
+			this.cleanupInlineStyles();
 
-            const img = document.createElement('img');
-            img.id = 'bgcm-custom-image';
-            img.src = url;
-            
-            img.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                object-fit: cover;
-                z-index: -1;
-                pointer-events: none;
-                transition: filter 0.5s ease-in-out;
-            `;
+			const img = document.createElement('img');
+			img.id = 'bgcm-custom-image';
+			img.src = url;
+			
+			img.style.cssText = `
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				object-fit: cover;
+				z-index: -1;
+				pointer-events: none;
+				transition: filter 0.5s ease-in-out;
+			`;
 
-            this.updateBlur();
-            
-            this.blurObserver = new MutationObserver(() => {
-                this.updateBlur();
-            });
-            
-            this.blurObserver.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style', 'class']
-            });
+			this.updateBlur();
+			
+			this.blurObserver = new MutationObserver(() => {
+				this.updateBlur();
+			});
+			
+			this.blurObserver.observe(document.body, {
+				childList: true,
+				subtree: true,
+				attributes: true,
+				attributeFilter: ['style', 'class']
+			});
 
-            document.body.appendChild(img);
+			document.body.appendChild(img);
 
-            const style = document.createElement('style');
-            style.id = 'bgcm-custom-style';
-            style.textContent = `
-                lol-uikit-background-switcher-image,
-                .lol-uikit-background-switcher-image,
-                [class*="background-switcher"],
-                [src*="parties-background"],
-                [src*="background"] {
-                    display: none !important;
-                    visibility: hidden !important;
-                }
+			const style = document.createElement('style');
+			style.id = 'bgcm-custom-style';
+			style.textContent = `
+				/* Скрываем стандартные фоны везде кроме champion select */
+				lol-uikit-background-switcher-image:not(.champion-select-main-container lol-uikit-background-switcher-image),
+				.lol-uikit-background-switcher-image:not(.champion-select-main-container .lol-uikit-background-switcher-image),
+				[class*="background-switcher"]:not(.champion-select-main-container [class*="background-switcher"]),
+				[src*="parties-background"]:not(.champion-select-main-container [src*="parties-background"]),
+				[src*="background"]:not(.champion-select-main-container [src*="background"]) {
+					display: none !important;
+					visibility: hidden !important;
+				}
 
-                #bgcm-custom-image {
-                    display: block !important;
-                    visibility: visible !important;
-                }
+				#bgcm-custom-image {
+					display: block !important;
+					visibility: visible !important;
+				}
 
-                #bgcm-custom-video {
-                    display: none !important;
-                }
-            `;
-            
-            document.head.appendChild(style);
-        }
+				#bgcm-custom-video {
+					display: none !important;
+				}
+
+				/* Гарантируем что видео в champion select работают */
+				.champion-select-main-container uikit-video,
+				.champion-select-main-container video {
+					display: block !important;
+					visibility: visible !important;
+				}
+			`;
+			
+			document.head.appendChild(style);
+		}
 
         createVideoBackground(url) {
-            this.cleanupInlineStyles();
+			this.cleanupInlineStyles();
 
-            const video = document.createElement('video');
-            video.id = 'bgcm-custom-video';
-            video.src = url;
-            video.autoplay = true;
-            video.loop = true;
-            video.muted = true;
-            video.playsInline = true;
-            
-            video.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                object-fit: cover;
-                z-index: -1;
-                pointer-events: none;
-                transition: filter 0.5s ease-in-out;
-            `;
+			const video = document.createElement('video');
+			video.id = 'bgcm-custom-video';
+			video.src = url;
+			video.autoplay = true;
+			video.loop = true;
+			video.muted = true;
+			video.playsInline = true;
+			
+			video.style.cssText = `
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				object-fit: cover;
+				z-index: -1;
+				pointer-events: none;
+				transition: filter 0.5s ease-in-out;
+			`;
 
-            this.updateBlur();
-            
-            this.blurObserver = new MutationObserver(() => {
-                this.updateBlur();
-            });
-            
-            this.blurObserver.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style', 'class']
-            });
+			this.updateBlur();
+			
+			this.blurObserver = new MutationObserver(() => {
+				this.updateBlur();
+			});
+			
+			this.blurObserver.observe(document.body, {
+				childList: true,
+				subtree: true,
+				attributes: true,
+				attributeFilter: ['style', 'class']
+			});
 
-            video.onerror = () => {
-                const imageUrl = url.replace('-animated', '').replace('(Animated)', '').trim();
-                this.setCustomBackground(imageUrl, false);
-            };
+			video.onerror = () => {
+				const imageUrl = url.replace('-animated', '').replace('(Animated)', '').trim();
+				this.setCustomBackground(imageUrl, false);
+			};
 
-            document.body.appendChild(video);
+			document.body.appendChild(video);
 
-            const style = document.createElement('style');
-            style.id = 'bgcm-custom-style';
-            style.textContent = `
-                lol-uikit-background-switcher-image,
-                .lol-uikit-background-switcher-image,
-                [class*="background-switcher"],
-                [src*="parties-background"],
-                [src*="background"] {
-                    display: none !important;
-                    visibility: hidden !important;
-                }
+			const style = document.createElement('style');
+			style.id = 'bgcm-custom-style';
+			style.textContent = `
+				/* Скрываем стандартные фоны везде кроме champion select */
+				lol-uikit-background-switcher-image:not(.champion-select-main-container lol-uikit-background-switcher-image),
+				.lol-uikit-background-switcher-image:not(.champion-select-main-container .lol-uikit-background-switcher-image),
+				[class*="background-switcher"]:not(.champion-select-main-container [class*="background-switcher"]),
+				[src*="parties-background"]:not(.champion-select-main-container [src*="parties-background"]),
+				[src*="background"]:not(.champion-select-main-container [src*="background"]) {
+					display: none !important;
+					visibility: hidden !important;
+				}
 
-                #bgcm-custom-video {
-                    display: block !important;
-                    visibility: visible !important;
-                }
-            `;
-            
-            document.head.appendChild(style);
-        }
+				#bgcm-custom-video {
+					display: block !important;
+					visibility: visible !important;
+				}
+
+				/* Гарантируем что видео в champion select работают */
+				.champion-select-main-container uikit-video,
+				.champion-select-main-container video {
+					display: block !important;
+					visibility: visible !important;
+				}
+			`;
+			
+			document.head.appendChild(style);
+		}
 
         cleanupInlineStyles() {
-            const selectors = [
-                'lol-uikit-background-switcher-image',
-                '.lol-uikit-background-switcher-image',
-                '[class*="background"]',
-                '[src*="parties-background"]',
-                '[src*="background"]'
-            ];
+			const selectors = [
+				'lol-uikit-background-switcher-image:not(.champion-select-main-container lol-uikit-background-switcher-image)',
+				'.lol-uikit-background-switcher-image:not(.champion-select-main-container .lol-uikit-background-switcher-image)',
+				'[class*="background-switcher"]:not(.champion-select-main-container [class*="background-switcher"])',
+				'[src*="parties-background"]:not(.champion-select-main-container [src*="parties-background"])',
+				'[src*="background"]:not(.champion-select-main-container [src*="background"])'
+			];
 
-            selectors.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(element => {
-                    element.style.backgroundImage = '';
-                    element.style.display = '';
-                    element.style.visibility = '';
-                });
-            });
-        }
+			selectors.forEach(selector => {
+				const elements = document.querySelectorAll(selector);
+				elements.forEach(element => {
+					element.style.backgroundImage = '';
+					element.style.display = '';
+					element.style.visibility = '';
+				});
+			});
+		}
 
         removeCustomBackground() {
             const style = document.getElementById('bgcm-custom-style');
@@ -919,11 +939,11 @@ import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Set
             paginationContainer.style.padding = '8px';
             
             const prevButton = document.createElement('button');
-            prevButton.innerHTML = '&lt;';
+            prevButton.innerHTML = '<';
             prevButton.className = 'pagination-button';
             
             const nextButton = document.createElement('button');
-            nextButton.innerHTML = '&gt;';
+            nextButton.innerHTML = '>';
             nextButton.className = 'pagination-button';
             
             const pageInfo = document.createElement('span');

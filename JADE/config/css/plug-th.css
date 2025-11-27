@@ -297,7 +297,7 @@
   color: var(--plug-color-buttonDisabled);
 }
 
-.v2-banner-component .lobby-banner,
+.v2-lobby-root-component .party-members-container,
 .v2-banner-placeholder .placeholder-invited-container
 {
     position: relative;
@@ -306,13 +306,26 @@
 		rgba(0,0,0,0) 10%,
         rgba(0,0,0,0.7) 25%,
         black 40%);
+	min-height: 650px;
+}
+
+.v2-header-component .lobby-header-overlay,
+.rcp-fe-lol-navigation-app .navbar_backdrop,
+.v2-lobby-root-component .navbar-blur,
+.navigation-root-component
+{
+	background: transparent;
+	backdrop-filter: blur(0px);
+	border-bottom: transparent;
 }
 
 .style-profile-emblem-header-subtitle,
-.lol-social-sidebar .bug-report-button
+.lol-social-sidebar .bug-report-button,
+.right-nav-vertical-rule
 {
 	display: none;
 }
+
 .lol-social-version-bar .version-bar-container
 {
 	font-family: var(--font-body);
