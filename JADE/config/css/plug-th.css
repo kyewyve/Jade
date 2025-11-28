@@ -216,6 +216,21 @@
   }
 }
 
+div[data-screen-name=rcp-fe-lol-navigation-screen]
+{
+	animation: ClientBorderAnim 3s ease-in-out infinite alternate;
+}
+
+@keyframes ClientBorderAnim {
+  0% {
+    border-color: #00fcc8;
+  }
+  100% {
+    border-color: #004c3d;
+  }
+}
+
+
 .style-profile-skin-picker-button{
 	display: none;
 }
