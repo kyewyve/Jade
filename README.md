@@ -1,5 +1,11 @@
 # JADE
 
+<img width="1915" height="1074" alt="image" src="https://github.com/user-attachments/assets/c4ffb8d9-72b0-439c-9677-c719899fff5e" />
+
+
+
+
+
 [README.ru](https://github.com/kyewyve/JADE/blob/main/README_RU.md)
 
 A comprehensive plug-in for the League of Legends client running through the [Pengu Loader](https://github.com/PenguLoader/PenguLoader/releases/).
