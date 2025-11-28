@@ -7,6 +7,7 @@ import "./config/js/main/requiem.js";
 window.Effect.apply('unified', { color: "#000000DA" });
 
 import "./config/css/plug-th.css";
+import "./config/css/rose.css";
 import * as observer from './config/js/main/observer.js';
 import * as shadowDom from './config/js/main/shadowDom.js';
 import { settingsUtils } from "https://unpkg.com/blank-settings-utils@latest/Settings-Utils.js";
